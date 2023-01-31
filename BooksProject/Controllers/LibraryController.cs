@@ -35,12 +35,28 @@ namespace BooksProject.Controllers
             return Ok(res);
         }
 
+        //[HttpPost("Post")]
+        //public async Task<ActionResult> Create([FromBody] Book model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+
+        //    _appDbContext.Books.Add(model);
+        //    await _appDbContext.SaveChangesAsync();
+
+        //    return CreatedAtAction("Get", new { id = model.Id }, model);
+        //}
+
+
         [HttpPost("PostBook")]
         public IActionResult PostBook(Book item)
         {
             var res = _appDbContext.Books.Add(item);
             return Ok(res);
         }
+ 
 
         [HttpDelete("DeleteBook")]
 
@@ -52,11 +68,46 @@ namespace BooksProject.Controllers
         }
 
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<IActionResult> Put(int id, [FromBody] Book model)
         {
-            var res = _appDbContext.Books.First(x => x.Id == id);
-            _appDbContext.Books.Update(res);
-           
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != model.Id)
+            {
+                return BadRequest();
+            }
+
+            _appDbContext.Entry(model).State = EntityState.Modified;
+
+            try
+            {
+                await _appDbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ModelExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
+
+        private bool ModelExists(int id)
+        {
+            return _appDbContext.Books.Any(e => e.Id == id);
+        }
+
+
+
+
     }
 }
